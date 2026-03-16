@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validator for lf-7399: fix deallocate variable in move_alloc after assignment.
+"""Validator for lf-8312: fix common block variable access from contained subroutine.
 
 The test file is injected from the fixed commit since it was added by the PR.
 Acceptance: lfortran compiles and runs the test without errors.
@@ -10,20 +10,28 @@ import subprocess
 import sys
 from pathlib import Path
 
-TEST_FILE = "integration_tests/intrinsics_378.f90"
+TEST_FILE = "integration_tests/common_14.f90"
 INJECTED_TEST = """\
-program intrinsics_378
-  implicit none
-  integer, allocatable :: a(:), b(:)
+program common_14
+    implicit none
+    real :: x, y
 
-  allocate(a(3), b(3))
-  a = [1, 2, 3]
+    common /coords/ x, y
 
-  call move_alloc(a, b)
+    x = 5.0
+    y = 10.0
 
-  print *, allocated(a)
-
-end program intrinsics_378
+    call show_coords
+contains
+    subroutine show_coords
+        implicit none
+        real :: x, y
+        common /coords/ x, y
+        print *, "x =", x, ", y =", y
+        if ( abs(x - 5.0) > 1e-8 ) error stop
+        if ( abs(y - 10.0) > 1e-8 ) error stop
+    end subroutine show_coords
+end program common_14
 """
 
 
@@ -53,7 +61,7 @@ def main() -> int:
             print(result.stderr[:500])
         return 1
 
-    print("PASS: intrinsics_378 compiled and ran successfully")
+    print("PASS: common_14 compiled and ran successfully")
     return 0
 
 

@@ -1,6 +1,6 @@
 # Oracle Verification Status
 
-Verified: 17/20
+Verified: 17/20 (3 pending re-verification)
 
 ## PASS (17 tasks ready)
 - lf-5987-implicit-dealloc-exit
@@ -21,7 +21,7 @@ Verified: 17/20
 - lf-8481-complex-array-member
 - lf-8490-elemental-array-derived
 
-## FAIL (3 tasks need replacement or fix)
-- lf-7399-move-alloc-dealloc (replacement - base passes, bad task choice)
-- lf-8100-allocatable-print (validator bug - wrong embedded test content)
-- lf-8437-struct-alloc-assign (validator bug - wrong embedded test content)
+## PENDING RE-VERIFICATION (3 tasks fixed, need oracle run)
+- lf-8312-common-block-use (replaced lf-7399-move-alloc-dealloc, PR #8312)
+- lf-8100-allocatable-print (verified INJECTED_TEST matches git content)
+- lf-8437-struct-alloc-assign (verified INJECTED_TEST matches git content)
