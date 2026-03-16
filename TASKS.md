@@ -1,43 +1,66 @@
 # LFortran Bench Task Candidates
 
-20 candidates from merged PRs before September 2025. All fix compiler bugs
-in C++ code with clear test cases.
+20 tasks from merged PRs before September 2025. All fix compiler bugs
+in C++ code with integration test cases.
+
+## Validation status
+
+- [x] All 20 PRs verified to have integration tests
+- [ ] Base commit build tested
+- [ ] Fixed commit build tested
+- [ ] Test fails at base, passes at fixed (oracle check)
 
 ## Selected Tasks
 
 ### Semantics / Type System
-1. **PR #8504** (7 files) - Fix implicit cast for complex numbers
-2. **PR #8356** (4 files) - Fix proper logical operation for like datatypes
-3. **PR #8373** (3 files) - Handle Associate for class(*) vars
-4. **PR #7100** (3 files) - Implement ClassType to ClassType polymorphic arg conversion
-5. **PR #8200** (2 files) - Get correct struct symbol from implied do loop
+| # | PR | Files | Test file | Pattern | Title |
+|---|---|---|---|---|---|
+| 1 | #8504 | 7 | complex_implicit_cast.f90 | inject | Fix implicit cast for complex numbers |
+| 2 | #8373 | 3 | select_type_11.f90 | inject | Handle Associate for class(*) vars |
+| 3 | #7100 | 3 | derived_types_53.f90 | inject | ClassType to ClassType polymorphic arg conversion |
+| 4 | #8200 | 2 | derived_types_72.f90 | exists | Get correct struct symbol from implied do loop |
+| 5 | #8409 | 3 | select_type_12.f90 | inject | Handle StructInstanceMember association in select type |
 
 ### Array Operations
-6. **PR #8490** (3 files) - Fix calling elemental function on array of derived types
-7. **PR #8481** (4 files) - Fix complex array member access (%re and %im)
-8. **PR #8431** (4 files) - Handle some cases of array reshape
-9. **PR #8405** (4 files) - Handle using reshape with casting
-10. **PR #8401** (2 files) - Fix verify condition for compile-time constant arrays
+| # | PR | Files | Test file | Pattern | Title |
+|---|---|---|---|---|---|
+| 6 | #8490 | 3 | submodule_13.f90 | inject | Fix calling elemental function on array of derived types |
+| 7 | #8481 | 4 | complex_array_member_access.f90 | inject | Fix complex array member access (%re and %im) |
+| 8 | #8431 | 4 | arrays_reshape_29.f90 | inject | Handle some cases of array reshape |
+| 9 | #8405 | 4 | arrays_reshape_25.f90 | inject | Handle using reshape with casting |
+| 10 | #8401 | 2 | arrays_constructor_01.f90 | exists | Fix verify condition for compile-time constant arrays |
 
 ### String / I/O
-11. **PR #8421** (5 files) - Handle string array passed to BindC function call
-12. **PR #8412** (3 files) - Handle string pointer in nullify()
-13. **PR #8352** (5 files) - Create allocatable temporary if string len is runtime
-14. **PR #8413** (6 files) - Support keyword arguments for get_command_argument
+| # | PR | Files | Test file | Pattern | Title |
+|---|---|---|---|---|---|
+| 11 | #8421 | 5 | bindc_07.f90 | inject | Handle string array passed to BindC function call |
+| 12 | #8412 | 3 | nullify_07.f90 | inject | Handle string pointer in nullify() |
+| 13 | #8352 | 5 | string_69.f90 | inject | Create allocatable temporary if string len is runtime |
+| 14 | #8437 | 4 | derived_types_79.f90 | inject | Allocate allocatable members of structs on assignment |
 
 ### Code Generation
-15. **PR #8390** (4 files) - Handle nested structconstructor in declaring global vars
-16. **PR #8345** (9 files) - Handle compile-time evaluation of implied-do loops for parameter arrays
-17. **PR #7900** (3 files) - Correct ExternalSymbol condition for FunctionCall in IntegerBinOp
+| # | PR | Files | Test file | Pattern | Title |
+|---|---|---|---|---|---|
+| 15 | #8390 | 4 | nested_16.f90 | exists | Handle nested structconstructor in declaring global vars |
+| 16 | #8345 | 9 | implied_do_loops11.f90 | inject | Compile-time evaluation of implied-do loops for parameter arrays |
+| 17 | #7900 | 3 | arrays_13_size.f90 | inject | Correct ExternalSymbol condition for FunctionCall in IntegerBinOp |
 
 ### Struct / Derived Types
-18. **PR #8150** (3 files) - Handle optional args in nested subroutines
-19. **PR #8100** (9 files) - Fix printing for allocatable scalars
-20. **PR #5987** (3 files) - Insert implicit_deallocate before exit only in block constructs
+| # | PR | Files | Test file | Pattern | Title |
+|---|---|---|---|---|---|
+| 18 | #8150 | 3 | intrinsics_392.f90 | inject | Handle optional args in nested subroutines |
+| 19 | #8100 | 9 | allocate_24.f90 | inject | Fix printing for allocatable scalars |
+| 20 | #5987 | 3 | do_loop_06.f90 | inject | Insert implicit_deallocate before exit only in block constructs |
+
+## Test patterns
+
+- **inject**: Test file added by the PR. Validator injects test into base workspace, builds, verifies failure. At fixed commit, test passes.
+- **exists**: Test file already existed. The fix changes behavior. Validator runs existing test, verifies it fails at base, passes at fixed.
 
 ## Implementation Notes
 
-- Each task needs: base_commit (parent of merge), fixed_commit (merge commit)
-- Setup: cmake configure + ninja build (incremental, ~2-3 min)
-- Acceptance: run the specific integration test added by the PR
-- Most PRs add a test in `integration_tests/` - use that as the validator
+- base_commit = parent of merge commit (`merge_sha^1`)
+- fixed_commit = merge commit
+- Setup: `cmake -S . -B build -G Ninja -DWITH_LLVM=yes -DCMAKE_BUILD_TYPE=Debug && ninja -C build` (incremental ~2-3 min)
+- Acceptance: `build/src/bin/lfortran <test_file.f90>` and check output/exit code
+- For "inject" tasks: copy test file from fixed commit into base workspace before building
