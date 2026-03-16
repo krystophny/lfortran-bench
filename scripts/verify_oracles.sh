@@ -15,6 +15,18 @@ mkdir -p "${WORK_DIR}"
 echo "Cloning lfortran..."
 git clone https://github.com/lfortran/lfortran.git "${WORK_DIR}/lfortran"
 
+# Pre-fetch all needed commits upfront
+echo "Pre-fetching all task commits..."
+for td in "${REPO_ROOT}"/tasks/pilot/*/; do
+    ty="${td}/task.yaml"
+    [ -f "$ty" ] || continue
+    fc=$(python3 -c "import yaml; print(yaml.safe_load(open('${ty}'))['fixed_commit'])")
+    bc=$(python3 -c "import yaml; print(yaml.safe_load(open('${ty}'))['base_commit'])")
+    git -C "${WORK_DIR}/lfortran" fetch origin "${fc}" --quiet 2>/dev/null || true
+    git -C "${WORK_DIR}/lfortran" fetch origin "${bc}" --quiet 2>/dev/null || true
+done
+echo "Pre-fetch done."
+
 PASS=0
 FAIL=0
 ERRORS=""
@@ -35,10 +47,6 @@ for task_dir in "${REPO_ROOT}"/tasks/pilot/*/; do
     echo "  fixed: ${fixed}"
 
     cd "${WORK_DIR}/lfortran"
-
-    # Fetch commits (merge commits may not be in default clone)
-    git fetch origin "${fixed}" --quiet 2>/dev/null || true
-    git fetch origin "${base}" --quiet 2>/dev/null || true
 
     # Test FIXED commit (should PASS)
     echo "  [fixed] checkout + build..."
