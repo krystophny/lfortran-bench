@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validator for lf-8100: fix print of allocatable scalar integer.
+"""Validator for lf-7222: fix operator overloading with multiple interfaces.
 
 The test file is injected from the fixed commit since it was added by the PR.
 Acceptance: lfortran compiles and runs the test without errors.
@@ -10,15 +10,51 @@ import subprocess
 import sys
 from pathlib import Path
 
-TEST_FILE = "integration_tests/allocate_24.f90"
+TEST_FILE = "integration_tests/operator_overloading_10.f90"
 INJECTED_TEST = """\
-program allocate_24
-  integer,allocatable:: x
-  x = 666
-  print "(I0)", x
-  if (x /= 666) error stop
-  deallocate(x)
-end program
+module operator_overloading_10_module
+   implicit none
+
+   type :: first_type
+      integer :: x
+   end type
+
+   type :: second_type
+      integer :: x
+   end type
+
+   interface operator(/=)
+      module procedure ne
+   end interface
+
+   interface operator(/=)
+      module procedure une
+   end interface
+
+contains
+   logical function ne(x, y)
+      type(first_type), intent(in) :: x, y
+      print *, "first_type::ne"
+      ne = .false.
+   end function
+
+   logical function une(s, z)
+      type(second_type), intent(in) :: s, z
+      print *, "second_type::une"
+      une = .false.
+   end function
+end module operator_overloading_10_module
+
+program main
+   use operator_overloading_10_module
+   implicit none
+
+   type(first_type) :: a1, a2
+   type(second_type) :: b1, b2
+
+   if (a1 /= a2) error stop
+   if (b1 /= b2) error stop
+end program main
 """
 
 
@@ -48,7 +84,7 @@ def main() -> int:
             print(result.stderr[:500])
         return 1
 
-    print("PASS: allocate_24 compiled and ran successfully")
+    print("PASS: operator_overloading_10 compiled and ran successfully")
     return 0
 
 

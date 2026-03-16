@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Validator for lf-8421: fix bind(c) character array interoperability.
 
-The test file is injected from the fixed commit since it was added by the PR.
-Acceptance: lfortran compiles and runs the test without errors.
+The test requires both a Fortran file and a C file, injected from the fixed
+commit since they were added by the PR.  The C file provides the bind(c)
+functions that the Fortran program calls.
+Acceptance: lfortran compiles both files together and runs without errors.
 """
 from __future__ import annotations
 
@@ -10,8 +12,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-TEST_FILE = "integration_tests/bindc_07.f90"
-INJECTED_TEST = """\
+F90_FILE = "integration_tests/bindc_07.f90"
+C_FILE = "integration_tests/bindc_07.c"
+
+INJECTED_F90 = """\
 program bindc_07
   use iso_c_binding, only: c_char, c_ptr, c_null_ptr, c_size_t, c_int, c_associated, c_f_pointer
   implicit none
@@ -93,22 +97,80 @@ program bindc_07
 end program bindc_07
 """
 
+INJECTED_C = """\
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+// Dummy getcwd function that mimics the real getcwd behavior
+char* getcwd_dummy(char* buf, size_t size) {
+    const char* dummy_path = "/home/user/test/directory";
+    size_t path_len = strlen(dummy_path);
+
+    if (buf == NULL) {
+        printf("ERROR: Received NULL buffer pointer!\\n");
+        return NULL;
+    }
+
+    if (size <= path_len) {
+        printf("ERROR: Buffer too small! Need %zu, got %zu\\n", path_len + 1, size);
+        return NULL;
+    }
+
+    // Debug: Print what we received
+    printf("C function received:\\n");
+    printf("  - Buffer pointer: %p\\n", (void*)buf);
+    printf("  - Buffer size: %zu\\n", size);
+
+    // Copy the dummy path to the buffer
+    strcpy(buf, dummy_path);
+
+    printf("  - Copied path: '%s'\\n", buf);
+    printf("  - Path length: %zu\\n", strlen(buf));
+
+    return buf;  // Return the buffer pointer on success
+}
+
+char* test_char_array(char* buffer, int len) {
+    printf("C test_char_array received:\\n");
+    printf("  - Buffer pointer: %p\\n", (void*)buffer);
+    printf("  - Length parameter: %d\\n", len);
+
+    if (buffer == NULL) {
+        printf("  - ERROR: NULL buffer!\\n");
+        return NULL;
+    }
+
+    // Write a test string
+    const char* test_str = "Hello from C!";
+    strncpy(buffer, test_str, len - 1);
+    buffer[len - 1] = '\\0';
+    printf("  - Wrote to buffer: '%s'\\n", buffer);
+    return buffer;
+}
+"""
+
 
 def main() -> int:
     workspace = Path(sys.argv[1])
     lfortran = workspace / "build" / "src" / "bin" / "lfortran"
-    test_path = workspace / TEST_FILE
+    f90_path = workspace / F90_FILE
+    c_path = workspace / C_FILE
 
     if not lfortran.exists():
         print(f"FAIL: lfortran binary not found at {lfortran}")
         return 1
 
-    if not test_path.exists():
-        test_path.parent.mkdir(parents=True, exist_ok=True)
-        test_path.write_text(INJECTED_TEST)
+    # Always inject both files to ensure correctness
+    f90_path.parent.mkdir(parents=True, exist_ok=True)
+    f90_path.write_text(INJECTED_F90)
+    c_path.write_text(INJECTED_C)
 
+    # Compile and run with both the Fortran and C files
     result = subprocess.run(
-        ["conda", "run", "-n", "lf-llvm11", str(lfortran), str(test_path)],
+        [
+            "conda", "run", "-n", "lf-llvm11",
+            str(lfortran), str(f90_path), str(c_path),
+        ],
         capture_output=True,
         text=True,
         timeout=60,

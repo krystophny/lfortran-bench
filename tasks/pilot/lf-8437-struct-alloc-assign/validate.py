@@ -70,9 +70,9 @@ def main() -> int:
         print(f"FAIL: lfortran binary not found at {lfortran}")
         return 1
 
-    if not test_path.exists():
-        test_path.parent.mkdir(parents=True, exist_ok=True)
-        test_path.write_text(INJECTED_TEST)
+    # Always inject: overwrite any stale or mismatched file from the workspace
+    test_path.parent.mkdir(parents=True, exist_ok=True)
+    test_path.write_text(INJECTED_TEST)
 
     result = subprocess.run(
         ["conda", "run", "-n", "lf-llvm11", str(lfortran), str(test_path)],

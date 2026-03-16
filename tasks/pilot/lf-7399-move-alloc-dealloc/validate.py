@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Validator for lf-8200: fix struct array initialization with implied do loop.
+"""Validator for lf-7399: fix deallocate variable in move_alloc after assignment.
 
-The test file exists at both base and fixed commits (exists pattern).
+The test file is injected from the fixed commit since it was added by the PR.
 Acceptance: lfortran compiles and runs the test without errors.
 """
 from __future__ import annotations
@@ -10,7 +10,21 @@ import subprocess
 import sys
 from pathlib import Path
 
-TEST_FILE = "integration_tests/derived_types_72.f90"
+TEST_FILE = "integration_tests/intrinsics_378.f90"
+INJECTED_TEST = """\
+program intrinsics_378
+  implicit none
+  integer, allocatable :: a(:), b(:)
+
+  allocate(a(3), b(3))
+  a = [1, 2, 3]
+
+  call move_alloc(a, b)
+
+  print *, allocated(a)
+
+end program intrinsics_378
+"""
 
 
 def main() -> int:
@@ -22,9 +36,9 @@ def main() -> int:
         print(f"FAIL: lfortran binary not found at {lfortran}")
         return 1
 
-    if not test_path.exists():
-        print(f"FAIL: test file not found at {test_path}")
-        return 1
+    # Always inject: overwrite any stale or mismatched file from the workspace
+    test_path.parent.mkdir(parents=True, exist_ok=True)
+    test_path.write_text(INJECTED_TEST)
 
     result = subprocess.run(
         ["conda", "run", "-n", "lf-llvm11", str(lfortran), str(test_path)],
@@ -39,7 +53,7 @@ def main() -> int:
             print(result.stderr[:500])
         return 1
 
-    print("PASS: derived_types_72 compiled and ran successfully")
+    print("PASS: intrinsics_378 compiled and ran successfully")
     return 0
 
 

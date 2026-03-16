@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validator for lf-8373: fix select type with pointer association.
+"""Validator for lf-7039: fix extended derived types assignment.
 
 The test file is injected from the fixed commit since it was added by the PR.
 Acceptance: lfortran compiles and runs the test without errors.
@@ -10,34 +10,40 @@ import subprocess
 import sys
 from pathlib import Path
 
-TEST_FILE = "integration_tests/select_type_11.f90"
+TEST_FILE = "integration_tests/derived_types_49.f90"
 INJECTED_TEST = """\
-program select_type_11
+module derived_types_49_m
     implicit none
-    integer, save :: arr(3) = [1, 2, 3]
+    public :: base, derived
 
-    print *, "Before:", arr
-    call update_any(arr)
-    print *, "After: ", arr
-    if(arr(1) /= 10) then
-        print *, "Test failed: arr(1) should be 10, but is ", arr(1)
-    else
-        print *, "Test passed: arr(1) is ", arr(1)
-    end if
-contains
+    type, abstract :: base
+        integer :: a
+    end type base
 
-    subroutine update_any(generic)
-        class(*) :: generic(:)
-    integer, pointer :: xx(:)
+    type, extends(base) :: derived
+        integer :: b
+    end type derived
 
-        select type(generic)
-        type is (integer)
-            xx => generic
-            xx(1) = 10
-        end select
-    end subroutine update_any
+    type, extends(derived) :: derived2
+        integer :: c
+        integer :: d
+    end type derived2
+end module derived_types_49_m
 
-end program select_type_11
+program derived_types_49
+  use derived_types_49_m
+  implicit none
+
+  type(derived2) :: set0, set1
+  set0 = derived2(10, 20, 30, 40)
+
+  set1 = set0
+
+  if (set1%a /= set0%a) error stop
+  if (set1%b /= set0%b) error stop
+  if (set1%c /= set0%c) error stop
+  if (set1%d /= set0%d) error stop
+end program derived_types_49
 """
 
 
@@ -50,9 +56,9 @@ def main() -> int:
         print(f"FAIL: lfortran binary not found at {lfortran}")
         return 1
 
-    if not test_path.exists():
-        test_path.parent.mkdir(parents=True, exist_ok=True)
-        test_path.write_text(INJECTED_TEST)
+    # Always inject: overwrite any stale or mismatched file from the workspace
+    test_path.parent.mkdir(parents=True, exist_ok=True)
+    test_path.write_text(INJECTED_TEST)
 
     result = subprocess.run(
         ["conda", "run", "-n", "lf-llvm11", str(lfortran), str(test_path)],
@@ -67,7 +73,7 @@ def main() -> int:
             print(result.stderr[:500])
         return 1
 
-    print("PASS: select_type_11 compiled and ran successfully")
+    print("PASS: derived_types_49 compiled and ran successfully")
     return 0
 
 
