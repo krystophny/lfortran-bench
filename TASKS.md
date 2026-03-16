@@ -36,7 +36,7 @@ in C++ code with integration test cases.
 | 11 | #8421 | 5 | bindc_07.f90 | inject | Handle string array passed to BindC function call |
 | 12 | #8412 | 3 | nullify_07.f90 | inject | Handle string pointer in nullify() |
 | 13 | #8352 | 5 | string_69.f90 | inject | Create allocatable temporary if string len is runtime |
-| 14 | #8437 | 4 | derived_types_79.f90 | inject | Allocate allocatable members of structs on assignment |
+| 14 | #8511 | 4 | read_05.f90 | inject | Accept READ with format literal and no unit |
 
 ### Code Generation
 | # | PR | Files | Test file | Pattern | Title |
@@ -49,7 +49,7 @@ in C++ code with integration test cases.
 | # | PR | Files | Test file | Pattern | Title |
 |---|---|---|---|---|---|
 | 18 | #8150 | 3 | intrinsics_392.f90 | inject | Handle optional args in nested subroutines |
-| 19 | #8100 | 9 | allocate_24.f90 | inject | Fix printing for allocatable scalars |
+| 19 | #8041 | 3 | intrinsics_391.f90 | inject | Fix compile-time eval of parameter expressions with intrinsics |
 | 20 | #5987 | 3 | do_loop_06.f90 | inject | Insert implicit_deallocate before exit only in block constructs |
 
 ## Test patterns

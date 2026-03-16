@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validator for lf-8100: fix print of allocatable scalar integer.
+"""Validator for lf-8511: accept READ with format literal and no unit.
 
 The test file is injected from the fixed commit since it was added by the PR.
 Acceptance: lfortran compiles and runs the test without errors.
@@ -10,14 +10,16 @@ import subprocess
 import sys
 from pathlib import Path
 
-TEST_FILE = "integration_tests/allocate_24.f90"
+TEST_FILE = "integration_tests/read_05.f90"
 INJECTED_TEST = """\
-program allocate_24
-  integer,allocatable:: x
-  x = 666
-  print "(I0)", x
-  if (x /= 666) error stop
-  deallocate(x)
+program main
+    implicit none
+    character(len=10) :: x
+    ! Accept READ with format literal and no unit
+    if (.false.) then
+        read '(A)', x
+    end if
+    print *, 'ok'
 end program
 """
 
@@ -31,7 +33,7 @@ def main() -> int:
         print(f"FAIL: lfortran binary not found at {lfortran}")
         return 1
 
-    if not test_path.exists():
+    if not test_path.exists() or "read '(A)'" not in test_path.read_text():
         test_path.parent.mkdir(parents=True, exist_ok=True)
         test_path.write_text(INJECTED_TEST)
 
@@ -48,7 +50,7 @@ def main() -> int:
             print(result.stderr[:500])
         return 1
 
-    print("PASS: allocate_24 compiled and ran successfully")
+    print("PASS: read_05 compiled and ran successfully")
     return 0
 
 
