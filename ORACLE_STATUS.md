@@ -1,8 +1,8 @@
 # Oracle Verification Status
 
-Verified: 17/20
+Verified: 18/20
 
-## PASS (17 tasks ready)
+## PASS (18 tasks ready)
 - lf-5987-implicit-dealloc-exit
 - lf-6943-findloc-2d-array
 - lf-7039-extended-type-assign
@@ -10,6 +10,7 @@ Verified: 17/20
 - lf-7222-operator-overload-multi
 - lf-7900-externalsym-binop
 - lf-8150-optional-nested
+- lf-8312-common-block-use (new)
 - lf-8345-implied-do-param
 - lf-8352-string-alloc-temp
 - lf-8401-array-constructor-verify
@@ -21,7 +22,6 @@ Verified: 17/20
 - lf-8481-complex-array-member
 - lf-8490-elemental-array-derived
 
-## FAIL (3 tasks need replacement or fix)
-- lf-7399-move-alloc-dealloc (base passes)
-- lf-8100-allocatable-print (validator bug)
-- lf-8437-struct-alloc-assign (validator bug)
+## FAIL (2 tasks need replacement)
+- lf-8100-allocatable-print (segfault at both base and fixed - fix incomplete)
+- lf-8437-struct-alloc-assign (runtime error at both - fix depends on other PRs)
