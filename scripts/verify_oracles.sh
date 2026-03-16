@@ -15,15 +15,15 @@ mkdir -p "${WORK_DIR}"
 echo "Cloning lfortran..."
 git clone https://github.com/lfortran/lfortran.git "${WORK_DIR}/lfortran"
 
-# Pre-fetch all needed commits upfront
+# Pre-fetch all needed commits upfront, storing as real refs
 echo "Pre-fetching all task commits..."
 for td in "${REPO_ROOT}"/tasks/pilot/*/; do
     ty="${td}/task.yaml"
     [ -f "$ty" ] || continue
     fc=$(python3 -c "import yaml; print(yaml.safe_load(open('${ty}'))['fixed_commit'])")
     bc=$(python3 -c "import yaml; print(yaml.safe_load(open('${ty}'))['base_commit'])")
-    git -C "${WORK_DIR}/lfortran" fetch origin "${fc}" --quiet 2>/dev/null || true
-    git -C "${WORK_DIR}/lfortran" fetch origin "${bc}" --quiet 2>/dev/null || true
+    git -C "${WORK_DIR}/lfortran" fetch origin "${fc}:refs/bench/${fc}" 2>/dev/null || echo "  WARN: could not fetch ${fc}"
+    git -C "${WORK_DIR}/lfortran" fetch origin "${bc}:refs/bench/${bc}" 2>/dev/null || echo "  WARN: could not fetch ${bc}"
 done
 echo "Pre-fetch done."
 
