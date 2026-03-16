@@ -50,7 +50,7 @@ for task_dir in "${REPO_ROOT}"/tasks/pilot/*/; do
 
     # Test FIXED commit (should PASS)
     echo "  [fixed] checkout + build..."
-    git checkout "${fixed}" --quiet 2>/dev/null || { echo "  ERROR: cannot checkout fixed ${fixed}"; ERRORS="${ERRORS}\n${task_id}: cannot checkout fixed"; continue; }
+    git checkout -f "${fixed}" --quiet 2>/dev/null || { echo "  ERROR: cannot checkout fixed ${fixed}"; ERRORS="${ERRORS}\n${task_id}: cannot checkout fixed"; continue; }
     git clean -fdx --quiet 2>/dev/null
     if ! conda run -n "${CONDA_ENV}" bash -c "cd ${WORK_DIR}/lfortran && bash build0.sh && cmake -S . -B build ${CMAKE_ARGS} && ninja -C build" >/dev/null 2>&1; then
         echo "  ERROR: fixed commit does not build"
@@ -67,7 +67,7 @@ for task_dir in "${REPO_ROOT}"/tasks/pilot/*/; do
 
     # Test BASE commit (should FAIL)
     echo "  [base] checkout + build..."
-    git checkout "${base}" --quiet 2>/dev/null || { echo "  ERROR: cannot checkout base ${base}"; ERRORS="${ERRORS}\n${task_id}: cannot checkout base"; continue; }
+    git checkout -f "${base}" --quiet 2>/dev/null || { echo "  ERROR: cannot checkout base ${base}"; ERRORS="${ERRORS}\n${task_id}: cannot checkout base"; continue; }
     git clean -fdx --quiet 2>/dev/null
     if ! conda run -n "${CONDA_ENV}" bash -c "cd ${WORK_DIR}/lfortran && bash build0.sh && cmake -S . -B build ${CMAKE_ARGS} && ninja -C build" >/dev/null 2>&1; then
         echo "  [base] BUILD FAIL (may be expected for old commits)"

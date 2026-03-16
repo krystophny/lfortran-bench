@@ -60,7 +60,7 @@ def clone_workspace(task: dict, workspace: Path) -> None:
 def clone_workspace_at(repo_url: str, commit: str, workspace: Path) -> None:
     subprocess.run(["git", "clone", repo_url, str(workspace)], check=True, capture_output=True, text=True)
     subprocess.run(["git", "fetch", "origin", commit], cwd=str(workspace), check=False, capture_output=True, text=True)
-    subprocess.run(["git", "checkout", commit], cwd=str(workspace), check=True, capture_output=True, text=True)
+    subprocess.run(["git", "checkout", "-f", commit], cwd=str(workspace), check=True, capture_output=True, text=True)
 
 
 def run_setup(task: dict, workspace: Path, task_dir: Path) -> list[dict]:
