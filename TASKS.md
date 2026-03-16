@@ -59,8 +59,38 @@ in C++ code with integration test cases.
 
 ## Implementation Notes
 
+### Build approach
+
+LFortran requires a micromamba env (`lf-llvm11`) with LLVM 11 and other deps. Cannot build
+from a fresh clone - must use the lfortran-dev meta-repo build infrastructure.
+
+**Workspace model** (different from fortbench):
+- Workspace = `lfortran-dev/lfortran/` directory (in-place, not a fresh clone)
+- `git checkout {base_commit}` to switch to base, then incremental build
+- Setup: `cd lfortran-dev && scripts/lf.sh build` (~2-3 min incremental)
+- Agent works on C++ source files in `src/`
+- Acceptance: `scripts/lf.sh itest -b llvm -t {test_name}` to run specific integration test
+
+### Harness changes needed (vs fortbench)
+- `clone_workspace()` → `checkout_workspace()` (git checkout in-place instead of clone)
+- Pre-build cache: keep a warm build dir, only rebuild changed files
+- Task isolation: `git checkout` + `git clean -fd src/` between tasks
+- For "inject" tasks: copy test file from fixed commit before building
+
+### Commits
 - base_commit = parent of merge commit (`merge_sha^1`)
 - fixed_commit = merge commit
-- Setup: `cmake -S . -B build -G Ninja -DWITH_LLVM=yes -DCMAKE_BUILD_TYPE=Debug && ninja -C build` (incremental ~2-3 min)
-- Acceptance: `build/src/bin/lfortran <test_file.f90>` and check output/exit code
-- For "inject" tasks: copy test file from fixed commit into base workspace before building
+
+### Timeouts
+- Build: ~120s incremental, ~300s if many files changed
+- Test: ~5-30s per integration test
+- Stage budget: 1800s (model needs time to understand C++ compiler code)
+- Stagnation: 1800s
+
+### Pre-testing status
+- [x] All 20 merge commits exist and are reachable
+- [x] All 20 base commits (^1) exist
+- [x] All 20 PRs have C++ source changes in src/
+- [x] All 20 PRs have integration test .f90 files
+- [x] Build requires lfortran-dev meta-repo env (not standalone cmake)
+- [ ] End-to-end oracle check per task (base fails, fixed passes)
