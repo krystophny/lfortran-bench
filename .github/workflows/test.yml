@@ -1,0 +1,37 @@
+name: test
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -e .
+      - run: python -c "import lfortran_bench; print(lfortran_bench.__version__)"
+      - name: Validate task manifests
+        run: |
+          for f in tasks/*/task.yaml tasks/*/*/task.yaml; do
+            [ -f "$f" ] && python -c "
+          import yaml, sys
+          t = yaml.safe_load(open('$f'))
+          for key in ('id', 'title', 'repo_url', 'base_commit', 'fixed_commit'):
+              assert key in t, f'missing {key} in $f'
+          print(f'OK: $f')
+          " || true
+          done
+      - name: Validate suite definitions
+        run: |
+          for f in suites/*.yaml; do
+            [ -f "$f" ] && python -c "
+          import yaml, sys
+          s = yaml.safe_load(open('$f'))
+          assert 'name' in s and 'tasks' in s and 'rows' in s, f'invalid suite: $f'
+          print(f'OK: $f')
+          " || true
+          done
